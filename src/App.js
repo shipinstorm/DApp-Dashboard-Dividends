@@ -115,6 +115,9 @@ function App() {
           const accounts = await web3.eth.getAccounts();
 
           const claimRes = await ProXContract.methods.claim().send({from: accounts[0]});
+          if (claimRes) {
+           refreshAccountData(); 
+          }
         } else {
           console.log("Please select the Binance Smart Chain Network");
         }
