@@ -101,6 +101,29 @@ function App() {
     }
   }
 
+  async function claim() {
+    if(typeof window.ethereum === 'undefined') {
+      console.log("Please install the MetaMask");
+    } else {
+      if(walletConnected) {
+        let web3 = new Web3(provider);
+  
+        const chainId = await web3.eth.getChainId();
+        if(chainId === 56) {
+          const ProXContract = new web3.eth.Contract(contractABI, smartContractAddress);
+
+          const accounts = await web3.eth.getAccounts();
+
+          const claimRes = await ProXContract.methods.claim().send({from: accounts[0]});
+        } else {
+          console.log("Please select the Binance Smart Chain Network");
+        }
+      } else {
+        console.log("Please connect wallet");
+      }
+    }
+  }
+
   async function refreshAccountData() {
     console.log("refreshAccountData");
     await fetchAccountData(provider);
@@ -141,6 +164,7 @@ function App() {
       <div className='dashboard'>
         <button
           onClick={() => connectWallet()}
+          className="connect"
         >
           {walletConnected ? "Disconnect Wallet" : "Connect Wallet"}
         </button>
@@ -152,6 +176,7 @@ function App() {
           <p>Total Rewards Distributed USD:</p>
           <p>~$ {Number(totalRewardsDistributed / Math.pow(10, 18) * binancePegETHPrice).toFixed(2)}</p>
         </div>
+        <div className='paragraph'></div>
         <div>
           <p>Total Rewards Distributed To XClub Wallet:</p>
           <p>{xClubWalletDividendsInfo ? Number(xClubWalletDividendsInfo[4] / Math.pow(10, 18)).toFixed(2) + " ETH" : ""}</p>
@@ -160,6 +185,7 @@ function App() {
           <p>Total Rewards Distributed To XClub Wallet USD:</p>
           <p>{xClubWalletDividendsInfo ? "~$ " + Number(xClubWalletDividendsInfo[4] / Math.pow(10, 18) * binancePegETHPrice).toFixed(2) : ""}</p>
         </div>
+        <div className='paragraph'></div>
         <div>
           <p>Total Rewards Distributed To User Wallet:</p>
           <p>{userWalletDividendsInfo ? Number(userWalletDividendsInfo[4] / Math.pow(10, 18)).toFixed(2) + " ETH" : ""}</p>
@@ -176,6 +202,12 @@ function App() {
           <p>User Dividend Claimable USD:</p>
           <p>{userWalletDividendsInfo ? "~$ " + Number(userWalletDividendsInfo[3] / Math.pow(10, 18) * binancePegETHPrice).toFixed(2) : ""}</p>
         </div>
+        <button
+          onClick={() => claim()}
+          className="claim"
+        >
+          Claim {userWalletDividendsInfo ? "~$ " + Number(userWalletDividendsInfo[3] / Math.pow(10, 18) * binancePegETHPrice).toFixed(2) : ""}
+        </button>
       </div>
     </div>
   );
