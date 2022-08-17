@@ -16,27 +16,24 @@ function App() {
   let [provider, setProvider] = useState(null);
   const [walletConnected, setWalletConnected] = useState(false);
   const [web3Modal, setWeb3Modal] = useState(null);
+  const [totalRewardsDistributed, setTotalRewardsDistributed] = useState(null);
+  const [xClubWalletDividendsInfo, setXClubWalletDividendsInfo] = useState(null);
+  const [binancePegETHPrice, setBinancePegETHPrice] = useState(0);
+  const [userWalletDividendsInfo, setUserWalletDividendsInfo] = useState(0);
 
   async function init() {
     const web3 = new Web3(new Web3.providers.HttpProvider('https://bsc-dataseed1.binance.org/'));
     
     const ProXContract = new web3.eth.Contract(contractABI, smartContractAddress);
   
-    const rewardsContractAddress = await ProXContract.methods.dividendTracker().call();
-    const totalRewardsDistributed = await ProXContract.methods.getTotalDividendsDistributed().call();
-    const totalDividendHolders = await ProXContract.methods.getNumberOfDividendTokenHolders().call();
-    const xClubWalletDividendsInfo = await ProXContract.methods.getAccountDividendsInfo(xClubWalletAddress).call();
-    const binancePegETHPrice = await axios
-    .get(`https://api.coingecko.com/api/v3/simple/token_price/binance-smart-chain?contract_addresses=${binancePegETHTokenAddress}&vs_currencies=usd`)
-    .then(res => res.data[binancePegETHTokenAddress].usd);
+    setTotalRewardsDistributed(await ProXContract.methods.getTotalDividendsDistributed().call());
+    setXClubWalletDividendsInfo(await ProXContract.methods.getAccountDividendsInfo(xClubWalletAddress).call());
+    setBinancePegETHPrice(
+      await axios
+      .get(`https://api.coingecko.com/api/v3/simple/token_price/binance-smart-chain?contract_addresses=${binancePegETHTokenAddress}&vs_currencies=usd`)
+      .then(res => res.data[binancePegETHTokenAddress].usd)
+    );
     
-    console.log("Rewards Contract Address: ", rewardsContractAddress);
-    console.log("Total Rewards Distributed: ", totalRewardsDistributed / Math.pow(10, 18));
-    console.log("Total Rewards Distributed USD: ", totalRewardsDistributed / Math.pow(10, 18) * binancePegETHPrice);
-    console.log("Total Dividend Holders: ", totalDividendHolders);
-    console.log("Total Rewards Distributed To XClub Wallet: ", xClubWalletDividendsInfo[4] / Math.pow(10, 18));
-    console.log("Total Rewards Distributed To XClub Wallet USD: ", xClubWalletDividendsInfo[4] / Math.pow(10, 18) * binancePegETHPrice);
-
     const providerOptions = {
       walletconnect: {
         package: WalletConnectProvider,
@@ -117,6 +114,7 @@ function App() {
       setProvider(null);
     }
     setWalletConnected(false);
+    setUserWalletDividendsInfo(0);
   }
 
   async function fetchAccountData() {
@@ -128,8 +126,7 @@ function App() {
 
       const accounts = await web3.eth.getAccounts();
 
-      const userWalletDividendsInfo = await ProXContract.methods.getAccountDividendsInfo(accounts[0]).call();
-      console.log("Total Rewards Distributed To User Wallet: ", userWalletDividendsInfo[4] / Math.pow(10, 18));
+      setUserWalletDividendsInfo(await ProXContract.methods.getAccountDividendsInfo(accounts[0]).call());
     } else {
       console.log("Please select the Binance Smart Chain Network");
     }
@@ -141,11 +138,45 @@ function App() {
 
   return (
     <div className="App">
-      <button
-        onClick={() => connectWallet()}
-      >
-        {walletConnected ? "Disconnect Wallet" : "Connect Wallet"}
-      </button>
+      <div className='dashboard'>
+        <button
+          onClick={() => connectWallet()}
+        >
+          {walletConnected ? "Disconnect Wallet" : "Connect Wallet"}
+        </button>
+        <div>
+          <p>Total Rewards Distributed:</p>
+          <p>{Number(totalRewardsDistributed / Math.pow(10, 18)).toFixed(2)} ETH</p>
+        </div>
+        <div>
+          <p>Total Rewards Distributed USD:</p>
+          <p>~$ {Number(totalRewardsDistributed / Math.pow(10, 18) * binancePegETHPrice).toFixed(2)}</p>
+        </div>
+        <div>
+          <p>Total Rewards Distributed To XClub Wallet:</p>
+          <p>{xClubWalletDividendsInfo ? Number(xClubWalletDividendsInfo[4] / Math.pow(10, 18)).toFixed(2) + " ETH" : ""}</p>
+        </div>
+        <div>
+          <p>Total Rewards Distributed To XClub Wallet USD:</p>
+          <p>{xClubWalletDividendsInfo ? "~$ " + Number(xClubWalletDividendsInfo[4] / Math.pow(10, 18) * binancePegETHPrice).toFixed(2) : ""}</p>
+        </div>
+        <div>
+          <p>Total Rewards Distributed To User Wallet:</p>
+          <p>{userWalletDividendsInfo ? Number(userWalletDividendsInfo[4] / Math.pow(10, 18)).toFixed(2) + " ETH" : ""}</p>
+        </div>
+        <div>
+          <p>Total Rewards Distributed To User Wallet USD:</p>
+          <p>{userWalletDividendsInfo ? "~$ " + Number(userWalletDividendsInfo[4] / Math.pow(10, 18) * binancePegETHPrice).toFixed(2) : ""}</p>
+        </div>
+        <div>
+          <p>User Dividend Claimable:</p>
+          <p>{userWalletDividendsInfo ? Number(userWalletDividendsInfo[3] / Math.pow(10, 18)).toFixed(2) + " ETH" : ""}</p>
+        </div>
+        <div>
+          <p>User Dividend Claimable USD:</p>
+          <p>{userWalletDividendsInfo ? "~$ " + Number(userWalletDividendsInfo[3] / Math.pow(10, 18) * binancePegETHPrice).toFixed(2) : ""}</p>
+        </div>
+      </div>
     </div>
   );
 }
