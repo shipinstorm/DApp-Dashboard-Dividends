@@ -39,3 +39,16 @@
   display: flex;
   justify-content: space-between;
 }
+
+@media screen and (max-width: 620px) {
+  .dashboard {
+    width: 100%;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .dashboard div {
+    display: block;
+    text-align: center;
+  }
+}
